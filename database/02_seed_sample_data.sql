@@ -1,0 +1,19 @@
+-- Optional repeatable sample data. Run after 01_create_schema.sql.
+USE zed_real_estate_analytics;
+
+INSERT IGNORE INTO dim_date (date_key,calendar_date,calendar_year,calendar_quarter,calendar_month,month_name,week_of_year,day_of_month,day_of_week,day_name,is_weekend)
+WITH RECURSIVE dates AS (SELECT DATE('2026-01-01') AS calendar_date UNION ALL SELECT calendar_date + INTERVAL 1 DAY FROM dates WHERE calendar_date < '2027-12-31')
+SELECT DATE_FORMAT(calendar_date,'%Y%m%d')+0,calendar_date,YEAR(calendar_date),QUARTER(calendar_date),MONTH(calendar_date),MONTHNAME(calendar_date),WEEK(calendar_date,3),DAYOFMONTH(calendar_date),WEEKDAY(calendar_date)+1,DAYNAME(calendar_date),WEEKDAY(calendar_date) IN (5,6) FROM dates;
+
+INSERT IGNORE INTO dim_platform (platform_name) VALUES ('Facebook'),('Instagram');
+INSERT IGNORE INTO dim_agent (source_agent_id,agent_name,email) VALUES ('AG-001','Ava Nguyen','ava.nguyen@zedrealestate.example'),('AG-002','Noah Wilson','noah.wilson@zedrealestate.example');
+INSERT IGNORE INTO dim_property (source_property_id,property_type,suburb,state_code,postcode,bedrooms,listing_price) VALUES ('PROP-001','House','Richmond','VIC','3121',3,1250000),('PROP-002','Apartment','South Yarra','VIC','3141',2,780000);
+SET @facebook_key := (SELECT platform_key FROM dim_platform WHERE platform_name='Facebook'); SET @instagram_key := (SELECT platform_key FROM dim_platform WHERE platform_name='Instagram');
+INSERT IGNORE INTO dim_campaign (source_campaign_id,campaign_name,platform_key,start_date_key,objective) VALUES ('META-AUTUMN-26','Autumn Listings 2026',@facebook_key,20260301,'LeadGeneration'),('IG-AUTUMN-26','Autumn Lifestyle 2026',@instagram_key,20260301,'LeadGeneration');
+SET @campaign_one := (SELECT campaign_key FROM dim_campaign WHERE source_campaign_id='META-AUTUMN-26'); SET @campaign_two := (SELECT campaign_key FROM dim_campaign WHERE source_campaign_id='IG-AUTUMN-26'); SET @property_one := (SELECT property_key FROM dim_property WHERE source_property_id='PROP-001'); SET @property_two := (SELECT property_key FROM dim_property WHERE source_property_id='PROP-002');
+INSERT IGNORE INTO dim_post (source_post_id,platform_key,campaign_key,property_key,published_date_key,published_time,post_type,post_caption) VALUES ('FB-POST-001',@facebook_key,@campaign_one,@property_one,20260305,'10:30:00','Carousel','Richmond family home inspection'),('IG-POST-001',@instagram_key,@campaign_two,@property_two,20260306,'18:00:00','Reel','South Yarra apartment tour');
+SET @fb_post := (SELECT post_key FROM dim_post WHERE source_post_id='FB-POST-001'); SET @ig_post := (SELECT post_key FROM dim_post WHERE source_post_id='IG-POST-001'); SET @agent_one := (SELECT agent_key FROM dim_agent WHERE source_agent_id='AG-001'); SET @agent_two := (SELECT agent_key FROM dim_agent WHERE source_agent_id='AG-002');
+INSERT IGNORE INTO fact_post_performance_daily (post_key,date_key,impressions,reach,link_clicks,reactions,comments,shares,saves,ad_spend) VALUES (@fb_post,20260305,5100,4200,180,230,18,27,12,185.50),(@ig_post,20260306,6900,5500,260,410,24,36,59,230.00);
+INSERT IGNORE INTO fact_lead (source_lead_id,enquiry_date_key,inspection_date_key,conversion_date_key,platform_key,campaign_key,post_key,property_key,agent_key,lead_status,conversion_type,revenue_amount) VALUES ('LEAD-001',20260305,20260308,20260320,@facebook_key,@campaign_one,@fb_post,@property_one,@agent_one,'Converted','Sale',1250000);
+INSERT IGNORE INTO fact_lead (source_lead_id,enquiry_date_key,inspection_date_key,platform_key,campaign_key,post_key,property_key,agent_key,lead_status) VALUES ('LEAD-002',20260306,20260309,@instagram_key,@campaign_two,@ig_post,@property_two,@agent_two,'InspectionBooked');
+INSERT IGNORE INTO fact_lead (source_lead_id,enquiry_date_key,platform_key,campaign_key,post_key,property_key,agent_key,lead_status) VALUES ('LEAD-003',20260306,@instagram_key,@campaign_two,@ig_post,@property_two,@agent_two,'Enquiry');
