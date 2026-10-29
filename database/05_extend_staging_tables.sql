@@ -1,0 +1,36 @@
+-- Run once after 01_create_schema.sql. It adds descriptive source fields used by the Python ETL.
+USE zed_real_estate_analytics;
+
+ALTER TABLE stg_crm_lead
+  ADD COLUMN IF NOT EXISTS agent_name_text VARCHAR(150) NULL,
+  ADD COLUMN IF NOT EXISTS agent_email_text VARCHAR(254) NULL,
+  ADD COLUMN IF NOT EXISTS property_type_text VARCHAR(30) NULL,
+  ADD COLUMN IF NOT EXISTS suburb_text VARCHAR(100) NULL,
+  ADD COLUMN IF NOT EXISTS state_code_text VARCHAR(3) NULL,
+  ADD COLUMN IF NOT EXISTS postcode_text VARCHAR(10) NULL,
+  ADD COLUMN IF NOT EXISTS bedrooms_text VARCHAR(10) NULL,
+  ADD COLUMN IF NOT EXISTS listing_price_text VARCHAR(50) NULL,
+  ADD COLUMN IF NOT EXISTS platform_text VARCHAR(30) NULL,
+  ADD COLUMN IF NOT EXISTS campaign_name_text VARCHAR(200) NULL,
+  ADD COLUMN IF NOT EXISTS published_date_text VARCHAR(50) NULL,
+  ADD COLUMN IF NOT EXISTS published_time_text VARCHAR(20) NULL,
+  ADD COLUMN IF NOT EXISTS post_type_text VARCHAR(30) NULL,
+  ADD COLUMN IF NOT EXISTS post_caption_text VARCHAR(2000) NULL,
+  ADD COLUMN IF NOT EXISTS post_url_text VARCHAR(2048) NULL;
+
+ALTER TABLE stg_meta_post_performance
+  ADD COLUMN IF NOT EXISTS platform_text VARCHAR(30) NULL,
+  ADD COLUMN IF NOT EXISTS campaign_id_text VARCHAR(100) NULL,
+  ADD COLUMN IF NOT EXISTS campaign_name_text VARCHAR(200) NULL,
+  ADD COLUMN IF NOT EXISTS property_id_text VARCHAR(50) NULL,
+  ADD COLUMN IF NOT EXISTS property_type_text VARCHAR(30) NULL,
+  ADD COLUMN IF NOT EXISTS suburb_text VARCHAR(100) NULL,
+  ADD COLUMN IF NOT EXISTS state_code_text VARCHAR(3) NULL,
+  ADD COLUMN IF NOT EXISTS postcode_text VARCHAR(10) NULL,
+  ADD COLUMN IF NOT EXISTS bedrooms_text VARCHAR(10) NULL,
+  ADD COLUMN IF NOT EXISTS listing_price_text VARCHAR(50) NULL,
+  ADD COLUMN IF NOT EXISTS published_date_text VARCHAR(50) NULL,
+  ADD COLUMN IF NOT EXISTS published_time_text VARCHAR(20) NULL,
+  ADD COLUMN IF NOT EXISTS post_type_text VARCHAR(30) NULL,
+  ADD COLUMN IF NOT EXISTS post_caption_text VARCHAR(2000) NULL,
+  ADD COLUMN IF NOT EXISTS post_url_text VARCHAR(2048) NULL;

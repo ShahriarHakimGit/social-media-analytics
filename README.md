@@ -1,64 +1,106 @@
-# Zed Real Estate Analytics Database
+# Zed Real Estate Social Media Analytics
 
-This folder contains the MariaDB database foundation for the Social Media Lead Analytics Dashboard. MariaDB is free and runs on macOS and Windows.
+This project combines synthetic CRM lead data and synthetic Meta post-performance data in MariaDB, then displays the results in a local dashboard. It runs on macOS without SQL Server or a password-based `root` login.
 
-## Database model
+## What has been built
 
-The reporting layer uses a star schema. `dim_` tables are stable filters (date, platform, campaign, agent, property and post). `fact_` tables hold daily post performance and individual CRM leads. `stg_` tables receive raw CSV/Excel data; `etl_` tables log load batches and rejected rows.
+```text
+Synthetic CSV files → Extract → Transform → Staging tables → Analytics facts → Reporting views → Local dashboard
+```
 
-## Setup on macOS
+- `stg_` tables temporarily store raw imported rows.
+- `fact_` tables store measurable events: leads and daily post performance.
+- `dim_` tables describe dates, platforms, agents, properties, campaigns and posts.
+- `rpt_` views prepare joined data for dashboard pages.
 
-1. Install Homebrew if required, then run `brew install mariadb`.
-2. Start MariaDB with `brew services start mariadb`.
-3. From the project folder, run:
+## First-time database setup on macOS
+
+1. Install and start MariaDB:
 
    ```bash
-   mariadb -u root < database/00_create_database.sql
-   mariadb -u root zed_real_estate_analytics < database/01_create_schema.sql
-   mariadb -u root zed_real_estate_analytics < database/02_seed_sample_data.sql
-   mariadb -u root zed_real_estate_analytics < database/03_reporting_views.sql
+   brew install mariadb
+   brew services start mariadb
    ```
 
-If your MariaDB root account has a password, add `-p` after `root`; it will prompt securely. For a graphical tool, install DBeaver Community and connect to `localhost` on port `3306`.
+2. Test the local connection:
 
-## Setup on Windows
+   ```bash
+   mariadb
+   ```
 
-Install MariaDB Community Server, then run these same scripts through DBeaver Community, HeidiSQL, or the `mariadb` command-line client. Script `00` creates `zed_real_estate_analytics`; run the remaining scripts while connected to it.
+   If you see a `MariaDB` prompt, type `exit`. Do not use `-u root -p` for this Homebrew setup.
 
-## Run order
+3. From the project folder, create the database and its reporting views:
 
-1. `database/00_create_database.sql` — creates the MariaDB database.
-2. `database/01_create_schema.sql` — creates dimensions, facts, staging and ETL tables.
-3. `database/02_seed_sample_data.sql` — optional repeatable demo data.
-4. `database/03_reporting_views.sql` — dashboard-ready reporting views.
-5. `database/04_validation_queries.sql` — checks after an ETL load.
+   ```bash
+   mariadb < database/00_create_database.sql
+   mariadb zed_real_estate_analytics < database/01_create_schema.sql
+   mariadb zed_real_estate_analytics < database/02_seed_sample_data.sql
+   mariadb zed_real_estate_analytics < database/03_reporting_views.sql
+   ```
 
-The schema is for a new development database. The seed script uses `INSERT IGNORE`, so it can be re-run without duplicating its sample data.
+## Guided ETL workflow used in this project
+
+The generator creates fake, non-personal data. Run these commands from the project folder in this order.
+
+```bash
+python3 etl/generate_synthetic_data.py
+
+python3 etl/step_1_extract_crm.py
+python3 etl/step_2_transform_crm.py
+python3 etl/step_3_load_crm_to_staging.py
+python3 etl/step_4_publish_crm_to_analytics.py
+
+python3 etl/step_5_extract_meta.py
+python3 etl/step_6_transform_meta.py
+python3 etl/step_7_load_meta_to_staging.py
+python3 etl/step_8_publish_meta_to_analytics.py
+```
+
+The first two stages of each source only read and validate CSV data. The load stages add a traceable batch to `etl_load_batch`, then store raw rows in a staging table. The publish stages create/update dimensions and populate the final fact tables.
+
+## Run the local dashboard
+
+After the ETL workflow completes, start the local dashboard:
+
+```bash
+python3 dashboard/server.py
+```
+
+Open [http://127.0.0.1:8000](http://127.0.0.1:8000) in a browser. Keep the terminal running while using the dashboard. It includes an executive overview, lead funnel, campaign performance and post performance.
+
+## Verify the data
+
+Open MariaDB:
+
+```bash
+mariadb zed_real_estate_analytics
+```
+
+Then run:
+
+```sql
+SELECT * FROM rpt_lead_funnel;
+SELECT * FROM rpt_post_performance;
+SELECT * FROM rpt_campaign_performance;
+```
+
+## Advanced importer (optional)
+
+`etl/run_import.py` is a more production-like single-command importer. It requires the staging-table migration, a Python virtual environment, PyMySQL and a password-based `zed_etl` MariaDB user. It is not required for the guided workflow above.
 
 ## Team ownership suggestion
 
 | Area | Responsibility |
 | --- | --- |
-| Database developer | Schema changes, indexes, data dictionary and migration review |
-| ETL developer | CSV/Excel validation, staging loads, dimension/fact upserts and batch/reject logging |
-| BI developer | Dashboard connection, reporting views and visual measures |
-| QA / project lead | Test data, reconciliation checks, user acceptance tests and release notes |
+| Database developer | Schema, indexes, data dictionary and migrations |
+| ETL developer | CSV validation, batch logging, staging and publishing |
+| BI developer | Reporting views, dashboard layout and measures |
+| QA / project lead | Test data, reconciliation checks and project documentation |
 
-Do not use `stg_` tables directly in a dashboard. Use `rpt_` views or the dimensions and facts.
+## Key files
 
-## Key rules
-
-- Preserve source-system IDs in `source_*_id` columns.
-- One `fact_lead` row is one CRM lead; update it as the lead progresses.
-- One `fact_post_performance_daily` row measures one post on one date.
-- Create an `etl_load_batch` record before each import and put rejected rows in `etl_rejected_record`.
-
-## Files
-
-- `database/00_create_database.sql` — creates the MariaDB database.
-- `database/01_create_schema.sql` — dimensions, facts, staging and ETL tables.
-- `database/02_seed_sample_data.sql` — small repeatable demo dataset.
-- `database/03_reporting_views.sql` — dashboard-ready reporting views.
-- `database/04_validation_queries.sql` — reconciliation and data-quality checks.
-- `database/data_dictionary.md` — field-level ETL and dashboard guidance.
-- `database/erd.md` — relationship diagram for team discussion and documentation.
+- `database/` — MariaDB schema, seed data, views, validation queries and documentation.
+- `etl/` — synthetic data generator, CSV templates and ETL scripts.
+- `etl/generated/` — generated raw and cleaned synthetic CSV files.
+- `dashboard/` — local browser dashboard.

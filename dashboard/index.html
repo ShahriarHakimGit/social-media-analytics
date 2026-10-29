@@ -1,0 +1,47 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Zed Real Estate | Social Media Analytics</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <main>
+    <header>
+      <div>
+        <p class="eyebrow">ZED REAL ESTATE</p>
+        <h1>Social Media Analytics</h1>
+        <p class="subtitle">Local dashboard powered by your MariaDB analytics database.</p>
+      </div>
+      <button id="refresh" type="button">Refresh data</button>
+    </header>
+
+    <p id="message" class="message">Loading analytics data…</p>
+    <section class="cards" aria-label="Executive overview">
+      <article><span>Total leads</span><strong id="leads">—</strong></article>
+      <article><span>Converted leads</span><strong id="converted">—</strong></article>
+      <article><span>Revenue</span><strong id="revenue">—</strong></article>
+      <article><span>Impressions</span><strong id="impressions">—</strong></article>
+      <article><span>Link clicks</span><strong id="clicks">—</strong></article>
+      <article><span>Ad spend</span><strong id="spend">—</strong></article>
+    </section>
+
+    <section class="grid">
+      <article class="panel">
+        <h2>Lead funnel</h2>
+        <div id="funnel" class="bars"></div>
+      </article>
+      <article class="panel">
+        <h2>Campaign performance</h2>
+        <div class="table-wrap"><table><thead><tr><th>Campaign</th><th>Impressions</th><th>Clicks</th><th>Spend</th></tr></thead><tbody id="campaigns"></tbody></table></div>
+      </article>
+      <article class="panel wide">
+        <h2>Post performance</h2>
+        <div class="table-wrap"><table><thead><tr><th>Post</th><th>Platform</th><th>Impressions</th><th>Clicks</th><th>Engagement rate</th></tr></thead><tbody id="posts"></tbody></table></div>
+      </article>
+    </section>
+  </main>
+  <script src="app.js"></script>
+</body>
+</html>
